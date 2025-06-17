@@ -10,14 +10,14 @@ class SalesOrder(Base, BaseModel):
     # Order information
     customer_id = Column(Integer, ForeignKey("customer.id"), nullable=False)
     order_date = Column(Date, default=date.today, nullable=False)
-    order_number = Column(String, unique=True, nullable=False)
-    status = Column(String, default="draft")  # draft, approved, completed, cancelled
+    order_number = Column(String(100), unique=True, nullable=False)
+    status = Column(String(50), default="draft")  # draft, approved, completed, cancelled
     
     # Financial information
     subtotal = Column(Numeric(precision=10, scale=2), default=0.0)
     tax_amount = Column(Numeric(precision=10, scale=2), default=0.0)
     total_amount = Column(Numeric(precision=10, scale=2), default=0.0)
-    payment_status = Column(String, default="unpaid")  # unpaid, partial, paid
+    payment_status = Column(String(50), default="unpaid")  # unpaid, partial, paid
     due_date = Column(Date, nullable=True)
     
     # Relationships
@@ -31,7 +31,7 @@ class SalesOrderItem(Base, BaseModel):
     
     # Item information
     sales_order_id = Column(Integer, ForeignKey("salesorder.id"), nullable=False)
-    item_description = Column(String, nullable=False)
+    item_description = Column(String(255), nullable=False)
     quantity = Column(Numeric(precision=10, scale=2), nullable=False)
     unit_price = Column(Numeric(precision=10, scale=2), nullable=False)
     subtotal = Column(Numeric(precision=10, scale=2), nullable=False)
@@ -46,11 +46,11 @@ class SalesInvoice(Base, BaseModel):
     
     # Invoice information
     sales_order_id = Column(Integer, ForeignKey("salesorder.id"), nullable=False)
-    invoice_number = Column(String, unique=True, nullable=False)
+    invoice_number = Column(String(100), unique=True, nullable=False)
     invoice_date = Column(Date, default=date.today, nullable=False)
     due_date = Column(Date, nullable=True)
     amount = Column(Numeric(precision=10, scale=2), nullable=False)
-    status = Column(String, default="unpaid")  # unpaid, partial, paid
+    status = Column(String(50), default="unpaid")  # unpaid, partial, paid
     
     # Relationships
     sales_order = relationship("SalesOrder", back_populates="invoices")
@@ -64,8 +64,8 @@ class SalesPayment(Base, BaseModel):
     invoice_id = Column(Integer, ForeignKey("salesinvoice.id"), nullable=False)
     payment_date = Column(Date, default=date.today, nullable=False)
     amount = Column(Numeric(precision=10, scale=2), nullable=False)
-    payment_method = Column(String, nullable=False)  # cash, bank_transfer, check
-    reference_number = Column(String, nullable=True)
+    payment_method = Column(String(255), nullable=False)  # cash, bank_transfer, check
+    reference_number = Column(String(255), nullable=True)
     notes = Column(Text, nullable=True)
     
     # Relationships

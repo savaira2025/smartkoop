@@ -7,7 +7,7 @@ load_dotenv()
 
 if __name__ == "__main__":
     # Get port from environment or use default
-    port = int(os.getenv("PORT", "8000"))
+    port = int(os.getenv("BACKEND_PORT", "8000"))
     
     # Run the application with uvicorn
     uvicorn.run(

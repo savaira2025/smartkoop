@@ -8,10 +8,10 @@ class ChartOfAccounts(Base, BaseModel):
     """Chart of accounts model for accounting structure"""
     
     # Account information
-    account_number = Column(String, unique=True, nullable=False)
-    account_name = Column(String, nullable=False)
-    account_type = Column(String, nullable=False)  # asset, liability, equity, revenue, expense
-    account_category = Column(String, nullable=True)
+    account_number = Column(String(255), unique=True, nullable=False)
+    account_name = Column(String(255), nullable=False)
+    account_type = Column(String(255), nullable=False)  # asset, liability, equity, revenue, expense
+    account_category = Column(String(255), nullable=True)
     is_active = Column(Boolean, default=True)
     
     # Relationships
@@ -22,11 +22,11 @@ class JournalEntry(Base, BaseModel):
     """Journal entry model for accounting transactions"""
     
     # Entry information
-    entry_number = Column(String, unique=True, nullable=False)
+    entry_number = Column(String(255), unique=True, nullable=False)
     entry_date = Column(Date, default=date.today, nullable=False)
     description = Column(Text, nullable=True)
-    entry_type = Column(String, nullable=False)  # manual, system, adjustment
-    status = Column(String, default="draft")  # draft, posted, reversed
+    entry_type = Column(String(255), nullable=False)  # manual, system, adjustment
+    status = Column(String(50), default="draft")  # draft, posted, reversed
     created_by = Column(Integer, ForeignKey("user.id"), nullable=True)
     
     # Relationships
@@ -56,8 +56,8 @@ class FiscalPeriod(Base, BaseModel):
     # Period information
     start_date = Column(Date, nullable=False)
     end_date = Column(Date, nullable=False)
-    period_name = Column(String, nullable=False)
-    status = Column(String, default="open")  # open, closed
+    period_name = Column(String(255), nullable=False)
+    status = Column(String(50), default="open")  # open, closed
     
     # Relationships
     journal_entries = relationship("JournalEntry", back_populates="fiscal_period")
@@ -70,7 +70,7 @@ class Payroll(Base, BaseModel):
     # Payroll information
     fiscal_period_id = Column(Integer, ForeignKey("fiscalperiod.id"), nullable=False)
     payroll_date = Column(Date, default=date.today, nullable=False)
-    status = Column(String, default="draft")  # draft, approved, paid
+    status = Column(String(50), default="draft")  # draft, approved, paid
     total_amount = Column(Numeric(precision=10, scale=2), default=0.0)
     
     # Relationships
@@ -97,14 +97,14 @@ class Employee(Base, BaseModel):
     """Employee model for payroll employees"""
     
     # Employee information
-    name = Column(String, nullable=False)
-    employee_id = Column(String, unique=True, nullable=False)
-    position = Column(String, nullable=True)
+    name = Column(String(255), nullable=False)
+    employee_id = Column(String(255), unique=True, nullable=False)
+    position = Column(String(255), nullable=True)
     hire_date = Column(Date, nullable=False)
     base_salary = Column(Numeric(precision=10, scale=2), nullable=False)
-    bank_account = Column(String, nullable=True)
-    tax_id = Column(String, nullable=True)
-    status = Column(String, default="active")  # active, inactive
+    bank_account = Column(String(255), nullable=True)
+    tax_id = Column(String(255), nullable=True)
+    status = Column(String(50), default="active")  # active, inactive
     
     # Relationships
     payroll_items = relationship("PayrollItem", back_populates="employee")

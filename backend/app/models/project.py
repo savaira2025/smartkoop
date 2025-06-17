@@ -8,12 +8,12 @@ class Project(Base, BaseModel):
     """Project model for tracking projects"""
     
     # Project information
-    project_name = Column(String, nullable=False)
-    project_number = Column(String, unique=True, nullable=False)
+    project_name = Column(String(255), nullable=False)
+    project_number = Column(String(255), unique=True, nullable=False)
     customer_id = Column(Integer, ForeignKey("customer.id"), nullable=False)
     start_date = Column(Date, default=date.today, nullable=False)
     end_date = Column(Date, nullable=True)
-    status = Column(String, default="active")  # active, completed, cancelled, on-hold
+    status = Column(String(50), default="active")  # active, completed, cancelled, on-hold
     
     # Financial information
     budget_amount = Column(Numeric(precision=10, scale=2), default=0.0)
@@ -34,12 +34,12 @@ class ProjectTask(Base, BaseModel):
     
     # Task information
     project_id = Column(Integer, ForeignKey("project.id"), nullable=False)
-    task_name = Column(String, nullable=False)
+    task_name = Column(String(255), nullable=False)
     description = Column(Text, nullable=True)
     start_date = Column(Date, default=date.today, nullable=False)
     due_date = Column(Date, nullable=True)
     completion_date = Column(Date, nullable=True)
-    status = Column(String, default="pending")  # pending, in-progress, completed, cancelled
+    status = Column(String(50), default="pending")  # pending, in-progress, completed, cancelled
     
     # Financial information
     estimated_hours = Column(Numeric(precision=10, scale=2), default=0.0)
@@ -73,10 +73,10 @@ class ProjectInvoice(Base, BaseModel):
     
     # Invoice information
     project_id = Column(Integer, ForeignKey("project.id"), nullable=False)
-    invoice_number = Column(String, unique=True, nullable=False)
+    invoice_number = Column(String(100), unique=True, nullable=False)
     invoice_date = Column(Date, default=date.today, nullable=False)
     due_date = Column(Date, nullable=True)
-    status = Column(String, default="draft")  # draft, sent, paid, cancelled
+    status = Column(String(50), default="draft")  # draft, sent, paid, cancelled
     
     # Financial information
     subtotal = Column(Numeric(precision=10, scale=2), default=0.0)
@@ -94,7 +94,7 @@ class ProjectInvoiceItem(Base, BaseModel):
     
     # Item information
     invoice_id = Column(Integer, ForeignKey("projectinvoice.id"), nullable=False)
-    description = Column(String, nullable=False)
+    description = Column(String(255), nullable=False)
     quantity = Column(Numeric(precision=10, scale=2), nullable=False)
     unit_price = Column(Numeric(precision=10, scale=2), nullable=False)
     subtotal = Column(Numeric(precision=10, scale=2), nullable=False)
@@ -115,8 +115,8 @@ class ProjectPayment(Base, BaseModel):
     invoice_id = Column(Integer, ForeignKey("projectinvoice.id"), nullable=False)
     payment_date = Column(Date, default=date.today, nullable=False)
     amount = Column(Numeric(precision=10, scale=2), nullable=False)
-    payment_method = Column(String, nullable=False)  # cash, bank_transfer, check
-    reference_number = Column(String, nullable=True)
+    payment_method = Column(String(255), nullable=False)  # cash, bank_transfer, check
+    reference_number = Column(String(255), nullable=True)
     notes = Column(Text, nullable=True)
     
     # Relationships

@@ -8,13 +8,13 @@ class Member(Base, BaseModel):
     """Member model for cooperative members"""
     
     # Basic information
-    member_id = Column(String, unique=True, index=True, nullable=False)
-    name = Column(String, nullable=False)
-    email = Column(String, unique=True, index=True, nullable=True)
-    phone = Column(String, nullable=True)
+    member_id = Column(String(50), unique=True, index=True, nullable=False)
+    name = Column(String(255), nullable=False)
+    email = Column(String(255), unique=True, index=True, nullable=True)
+    phone = Column(String(20), nullable=True)
     address = Column(Text, nullable=True)
     join_date = Column(Date, default=date.today, nullable=False)
-    status = Column(String, default="calon_anggota")  # calon_anggota, anggota, pengurus, inactive, suspended
+    status = Column(String(50), default="calon_anggota")  # calon_anggota, anggota, pengurus, inactive, suspended
     
     # Savings information
     principal_savings = Column(Numeric(precision=10, scale=2), default=0.0)
@@ -24,7 +24,7 @@ class Member(Base, BaseModel):
     shu_balance = Column(Numeric(precision=10, scale=2), default=0.0)
     
     # Registration information
-    registration_method = Column(String, default="web")  # web, mobile, office
+    registration_method = Column(String(50), default="web")  # web, mobile, office
     
     # User relationship (optional)
     user_id = Column(Integer, ForeignKey("user.id"), nullable=True)
@@ -42,9 +42,9 @@ class SavingsTransaction(Base, BaseModel):
     member_id = Column(Integer, ForeignKey("member.id"), nullable=False)
     transaction_date = Column(Date, default=date.today, nullable=False)
     amount = Column(Numeric(precision=10, scale=2), nullable=False)
-    transaction_type = Column(String, nullable=False)  # principal, mandatory, voluntary, withdrawal
+    transaction_type = Column(String(50), nullable=False)  # principal, mandatory, voluntary, withdrawal
     description = Column(Text, nullable=True)
-    status = Column(String, default="completed")  # pending, completed, failed
+    status = Column(String(50), default="completed")  # pending, completed, failed
     
     # Relationships
     member = relationship("Member", back_populates="savings_transactions")
@@ -57,8 +57,8 @@ class SHUDistribution(Base, BaseModel):
     fiscal_year = Column(Integer, nullable=False)
     amount = Column(Numeric(precision=10, scale=2), nullable=False)
     distribution_date = Column(Date, default=date.today, nullable=False)
-    distribution_method = Column(String, default="account_credit")  # account_credit, cash, reinvestment
-    status = Column(String, default="pending")  # pending, completed, failed
+    distribution_method = Column(String(50), default="account_credit")  # account_credit, cash, reinvestment
+    status = Column(String(50), default="pending")  # pending, completed, failed
     
     # Relationships
     member = relationship("Member", back_populates="shu_distributions")
