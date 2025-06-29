@@ -3,13 +3,13 @@ from datetime import date
 from sqlalchemy.orm import Session
 from sqlalchemy import or_
 
-from app.models.business_partners import Customer
+from app.models.business_partners import Customer, CustomerContact
 from app.schemas.customer import CustomerCreate, CustomerUpdate
 
 # Customer CRUD operations
 def create_customer(db: Session, customer: CustomerCreate) -> Customer:
     """
-    Create a new customer in the database
+    Create a new customer in the database with contacts
     """
     db_customer = Customer(
         name=customer.name,
@@ -23,6 +23,32 @@ def create_customer(db: Session, customer: CustomerCreate) -> Customer:
         status=customer.status
     )
     db.add(db_customer)
+    db.flush()  # Flush to get the customer ID
+    
+    # Create contacts if provided
+    if customer.contacts:
+        # Ensure only one primary contact
+        primary_count = sum(1 for contact in customer.contacts if contact.is_primary)
+        if primary_count > 1:
+            # Set only the first one as primary
+            for i, contact in enumerate(customer.contacts):
+                contact.is_primary = i == 0
+        elif primary_count == 0 and customer.contacts:
+            # Set the first contact as primary if none specified
+            customer.contacts[0].is_primary = True
+            
+        for contact_data in customer.contacts:
+            db_contact = CustomerContact(
+                customer_id=db_customer.id,
+                name=contact_data.name,
+                title=contact_data.title,
+                email=contact_data.email,
+                phone=contact_data.phone,
+                department=contact_data.department,
+                is_primary=contact_data.is_primary
+            )
+            db.add(db_contact)
+    
     db.commit()
     db.refresh(db_customer)
     return db_customer
@@ -66,13 +92,43 @@ def get_customers(
 
 def update_customer(db: Session, customer_id: int, customer: CustomerUpdate) -> Customer:
     """
-    Update a customer's information
+    Update a customer's information including contacts
     """
     db_customer = get_customer(db, customer_id)
     
-    # Update customer attributes
-    for key, value in customer.dict(exclude_unset=True).items():
+    # Update customer attributes (excluding contacts)
+    customer_data = customer.dict(exclude_unset=True, exclude={'contacts'})
+    for key, value in customer_data.items():
         setattr(db_customer, key, value)
+    
+    # Handle contacts update if provided
+    if customer.contacts is not None:
+        # Delete existing contacts
+        db.query(CustomerContact).filter(CustomerContact.customer_id == customer_id).delete()
+        
+        # Create new contacts
+        if customer.contacts:
+            # Ensure only one primary contact
+            primary_count = sum(1 for contact in customer.contacts if contact.is_primary)
+            if primary_count > 1:
+                # Set only the first one as primary
+                for i, contact in enumerate(customer.contacts):
+                    contact.is_primary = i == 0
+            elif primary_count == 0 and customer.contacts:
+                # Set the first contact as primary if none specified
+                customer.contacts[0].is_primary = True
+                
+            for contact_data in customer.contacts:
+                db_contact = CustomerContact(
+                    customer_id=customer_id,
+                    name=contact_data.name,
+                    title=contact_data.title,
+                    email=contact_data.email,
+                    phone=contact_data.phone,
+                    department=contact_data.department,
+                    is_primary=contact_data.is_primary
+                )
+                db.add(db_contact)
     
     db.commit()
     db.refresh(db_customer)

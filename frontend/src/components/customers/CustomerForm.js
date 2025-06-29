@@ -14,10 +14,22 @@ import {
   Alert, 
   Divider 
 } from '@mui/material';
+import { Add as AddIcon } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import customerService from '../../services/customerService';
+import ContactEntry from './ContactEntry';
+
+// Contact validation schema
+const contactSchema = Yup.object({
+  name: Yup.string().required('Contact name is required'),
+  title: Yup.string().nullable(),
+  email: Yup.string().email('Enter a valid email').nullable(),
+  phone: Yup.string().nullable(),
+  department: Yup.string().nullable(),
+  is_primary: Yup.boolean(),
+});
 
 // Validation schema
 const validationSchema = Yup.object({
@@ -30,6 +42,7 @@ const validationSchema = Yup.object({
   credit_limit: Yup.number().min(0, 'Must be a positive number').nullable(),
   tax_id: Yup.string().nullable(),
   status: Yup.string().required('Status is required'),
+  contacts: Yup.array().of(contactSchema).min(1, 'At least one contact is required'),
 });
 
 const CustomerForm = () => {
@@ -40,6 +53,10 @@ const CustomerForm = () => {
   const [loading, setLoading] = useState(isEditMode);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
+  const [contacts, setContacts] = useState([
+    { name: '', title: '', email: '', phone: '', department: '', is_primary: true }
+  ]);
+  const [contactErrors, setContactErrors] = useState([{}]);
   
   // Initialize form with default values
   const formik = useFormik({
@@ -53,6 +70,9 @@ const CustomerForm = () => {
       credit_limit: 0,
       tax_id: '',
       status: 'active',
+      contacts: [
+        { name: '', title: '', email: '', phone: '', department: '', is_primary: true }
+      ],
     },
     validationSchema: validationSchema,
     onSubmit: async (values) => {
@@ -69,7 +89,13 @@ const CustomerForm = () => {
           // Create new customer
           await customerService.createCustomer(values);
           setSuccess('Customer created successfully');
+          
+          // Reset form and contacts
           formik.resetForm();
+          const defaultContacts = [{ name: '', title: '', email: '', phone: '', department: '', is_primary: true }];
+          setContacts(defaultContacts);
+          setContactErrors([{}]);
+          formik.setFieldValue('contacts', defaultContacts);
         }
         
         setLoading(false);
@@ -96,6 +122,14 @@ const CustomerForm = () => {
           
           const data = await customerService.getCustomer(id);
           
+          // Handle contacts data
+          const customerContacts = data.contacts && data.contacts.length > 0 
+            ? data.contacts 
+            : [{ name: '', title: '', email: '', phone: '', department: '', is_primary: true }];
+          
+          setContacts(customerContacts);
+          setContactErrors(customerContacts.map(() => ({})));
+          
           // Update form values with customer data
           formik.setValues({
             name: data.name || '',
@@ -107,6 +141,7 @@ const CustomerForm = () => {
             credit_limit: data.credit_limit || 0,
             tax_id: data.tax_id || '',
             status: data.status || 'active',
+            contacts: customerContacts,
           });
           
           setLoading(false);
@@ -121,6 +156,52 @@ const CustomerForm = () => {
     }
   }, [id, isEditMode]);
   
+  // Contact management functions
+  const handleContactChange = (index, field, value) => {
+    const updatedContacts = [...contacts];
+    updatedContacts[index] = { ...updatedContacts[index], [field]: value };
+    setContacts(updatedContacts);
+    formik.setFieldValue('contacts', updatedContacts);
+  };
+
+  const handleContactPrimaryChange = (index, isPrimary) => {
+    const updatedContacts = [...contacts];
+    // If setting as primary, unset all others
+    if (isPrimary) {
+      updatedContacts.forEach((contact, i) => {
+        contact.is_primary = i === index;
+      });
+    } else {
+      updatedContacts[index].is_primary = false;
+    }
+    setContacts(updatedContacts);
+    formik.setFieldValue('contacts', updatedContacts);
+  };
+
+  const handleAddContact = () => {
+    const newContact = { name: '', title: '', email: '', phone: '', department: '', is_primary: false };
+    const updatedContacts = [...contacts, newContact];
+    setContacts(updatedContacts);
+    setContactErrors([...contactErrors, {}]);
+    formik.setFieldValue('contacts', updatedContacts);
+  };
+
+  const handleRemoveContact = (index) => {
+    if (contacts.length > 1) {
+      const updatedContacts = contacts.filter((_, i) => i !== index);
+      const updatedErrors = contactErrors.filter((_, i) => i !== index);
+      
+      // If removing primary contact, set first contact as primary
+      if (contacts[index].is_primary && updatedContacts.length > 0) {
+        updatedContacts[0].is_primary = true;
+      }
+      
+      setContacts(updatedContacts);
+      setContactErrors(updatedErrors);
+      formik.setFieldValue('contacts', updatedContacts);
+    }
+  };
+
   // Handle cancel button click
   const handleCancel = () => {
     navigate('/customers');
@@ -307,6 +388,47 @@ const CustomerForm = () => {
                 helperText={formik.touched.tax_id && formik.errors.tax_id}
                 disabled={loading}
               />
+            </Grid>
+            
+            {/* Contact Information */}
+            <Grid item xs={12} sx={{ mt: 2 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                <Typography variant="subtitle1">
+                  Contact Information (PIC)
+                </Typography>
+                <Button
+                  variant="outlined"
+                  startIcon={<AddIcon />}
+                  onClick={handleAddContact}
+                  disabled={loading}
+                  size="small"
+                >
+                  Add Contact
+                </Button>
+              </Box>
+              <Divider sx={{ mb: 2 }} />
+            </Grid>
+            
+            <Grid item xs={12}>
+              {contacts.map((contact, index) => (
+                <ContactEntry
+                  key={index}
+                  contact={contact}
+                  index={index}
+                  onChange={handleContactChange}
+                  onRemove={handleRemoveContact}
+                  onPrimaryChange={handleContactPrimaryChange}
+                  errors={contactErrors[index] || {}}
+                  disabled={loading}
+                  showRemove={contacts.length > 1}
+                />
+              ))}
+              
+              {formik.touched.contacts && formik.errors.contacts && typeof formik.errors.contacts === 'string' && (
+                <Alert severity="error" sx={{ mt: 1 }}>
+                  {formik.errors.contacts}
+                </Alert>
+              )}
             </Grid>
             
             {/* Form Actions */}
