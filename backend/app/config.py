@@ -40,6 +40,13 @@ class Settings(BaseSettings):
     # File storage
     UPLOAD_DIRECTORY: str = os.getenv("UPLOAD_DIRECTORY", "./uploads")
     
+    # Currency settings
+    DEFAULT_CURRENCY: str = "IDR"
+    CURRENCY_SYMBOL: str = "Rp"
+    CURRENCY_LOCALE: str = "id-ID"
+    USE_DECIMALS: bool = False
+    USD_TO_IDR_RATE: float = 15500.0
+    
     class Config:
         case_sensitive = True
 

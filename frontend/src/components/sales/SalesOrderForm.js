@@ -30,6 +30,7 @@ import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import salesService from '../../services/salesService';
 import customerService from '../../services/customerService';
+import { formatCurrency } from '../../utils/currency';
 
 // Validation schema
 const validationSchema = Yup.object({
@@ -241,15 +242,6 @@ const SalesOrderForm = () => {
   const taxAmount = subtotal * taxRate;
   const totalAmount = subtotal + taxAmount;
   
-  // Format currency
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(amount);
-  };
   
   return (
     <Box>

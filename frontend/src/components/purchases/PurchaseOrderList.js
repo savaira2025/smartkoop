@@ -28,6 +28,7 @@ import {
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import purchaseService from '../../services/purchaseService';
+import { formatCurrency } from '../../utils/currency';
 
 const PurchaseOrderList = () => {
   const navigate = useNavigate();
@@ -184,13 +185,6 @@ const PurchaseOrderList = () => {
     return date.toLocaleDateString();
   };
 
-  // Format currency
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(amount);
-  };
 
   return (
     <Box>

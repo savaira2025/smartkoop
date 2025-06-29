@@ -32,6 +32,7 @@ import {
 } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
 import memberService from '../../services/memberService';
+import { formatCurrency } from '../../utils/currency';
 
 // TabPanel component for tab content
 function TabPanel(props) {
@@ -158,15 +159,6 @@ const MemberDetail = () => {
     alert('Add SHU distribution functionality would be implemented here');
   };
   
-  // Format currency
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(amount);
-  };
   
   // Render status chip
   const renderStatusChip = (status) => {

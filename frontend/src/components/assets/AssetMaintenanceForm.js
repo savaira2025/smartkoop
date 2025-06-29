@@ -227,7 +227,7 @@ const AssetMaintenanceForm = () => {
                   margin="normal"
                   type="number"
                   InputProps={{
-                    startAdornment: <InputAdornment position="start">$</InputAdornment>,
+                    startAdornment: <InputAdornment position="start">Rp</InputAdornment>,
                   }}
                 />
               </Grid>

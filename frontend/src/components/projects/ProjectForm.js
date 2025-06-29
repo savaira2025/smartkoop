@@ -23,6 +23,7 @@ import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import projectService from '../../services/projectService';
 import customerService from '../../services/customerService';
+import { formatCurrency } from '../../utils/currency';
 
 // Validation schema
 const validationSchema = Yup.object({
@@ -346,7 +347,7 @@ const ProjectForm = () => {
                 helperText={formik.touched.budget_amount && formik.errors.budget_amount}
                 disabled={loading}
                 InputProps={{
-                  startAdornment: <span>$</span>,
+                  startAdornment: <span>Rp</span>,
                 }}
               />
             </Grid>

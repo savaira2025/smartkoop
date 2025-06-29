@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link as RouterLink } from 'react-router-dom';
+import { formatCurrency } from '../../utils/currency';
 import {
   Box,
   Button,
@@ -227,14 +228,14 @@ const AssetDetail = () => {
                 Acquisition Cost
               </Typography>
               <Typography variant="body1" gutterBottom>
-                ${parseFloat(asset.acquisition_cost).toFixed(2)}
+                {formatCurrency(asset.acquisition_cost)}
               </Typography>
 
               <Typography variant="subtitle1" color="text.secondary">
                 Current Value
               </Typography>
               <Typography variant="body1" gutterBottom>
-                ${parseFloat(asset.current_value).toFixed(2)}
+                {formatCurrency(asset.current_value)}
               </Typography>
 
               <Typography variant="subtitle1" color="text.secondary">
@@ -309,10 +310,10 @@ const AssetDetail = () => {
                         {new Date(depreciation.depreciation_date).toLocaleDateString()}
                       </TableCell>
                       <TableCell>
-                        ${parseFloat(depreciation.depreciation_amount).toFixed(2)}
+                        {formatCurrency(depreciation.depreciation_amount)}
                       </TableCell>
                       <TableCell>
-                        ${parseFloat(depreciation.book_value_after).toFixed(2)}
+                        {formatCurrency(depreciation.book_value_after)}
                       </TableCell>
                       <TableCell>
                         <IconButton
@@ -380,7 +381,7 @@ const AssetDetail = () => {
                       </TableCell>
                       <TableCell>{maintenance.maintenance_type}</TableCell>
                       <TableCell>
-                        ${parseFloat(maintenance.cost).toFixed(2)}
+                        {formatCurrency(maintenance.cost)}
                       </TableCell>
                       <TableCell>
                         {maintenance.performed_by || 'Not specified'}

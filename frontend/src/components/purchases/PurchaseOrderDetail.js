@@ -32,6 +32,7 @@ import {
 } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
 import purchaseService from '../../services/purchaseService';
+import { formatCurrency } from '../../utils/currency';
 
 const PurchaseOrderDetail = () => {
   const { id } = useParams();
@@ -137,13 +138,6 @@ const PurchaseOrderDetail = () => {
     return date.toLocaleDateString();
   };
 
-  // Format currency
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(amount);
-  };
 
   // Render status chip
   const renderStatusChip = (status) => {

@@ -303,7 +303,7 @@ const MemberForm = () => {
                 helperText={formik.touched.principal_savings && formik.errors.principal_savings}
                 disabled={loading}
                 InputProps={{
-                  startAdornment: <span>$</span>,
+                  startAdornment: <span>Rp</span>,
                 }}
               />
             </Grid>
@@ -322,7 +322,7 @@ const MemberForm = () => {
                 helperText={formik.touched.mandatory_savings && formik.errors.mandatory_savings}
                 disabled={loading}
                 InputProps={{
-                  startAdornment: <span>$</span>,
+                  startAdornment: <span>Rp</span>,
                 }}
               />
             </Grid>
@@ -341,7 +341,7 @@ const MemberForm = () => {
                 helperText={formik.touched.voluntary_savings && formik.errors.voluntary_savings}
                 disabled={loading}
                 InputProps={{
-                  startAdornment: <span>$</span>,
+                  startAdornment: <span>Rp</span>,
                 }}
               />
             </Grid>

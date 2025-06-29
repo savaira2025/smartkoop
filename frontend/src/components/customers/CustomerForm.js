@@ -289,7 +289,7 @@ const CustomerForm = () => {
                 helperText={formik.touched.credit_limit && formik.errors.credit_limit}
                 disabled={loading}
                 InputProps={{
-                  startAdornment: <span>$</span>,
+                  startAdornment: <span>Rp</span>,
                 }}
               />
             </Grid>

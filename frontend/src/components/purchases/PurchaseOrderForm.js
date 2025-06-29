@@ -32,6 +32,7 @@ import {
 import { useNavigate, useParams } from 'react-router-dom';
 import purchaseService from '../../services/purchaseService';
 import supplierService from '../../services/supplierService';
+import { formatCurrency } from '../../utils/currency';
 
 const PurchaseOrderForm = () => {
   const { id } = useParams();
@@ -305,13 +306,6 @@ const PurchaseOrderForm = () => {
     };
   };
   
-  // Format currency
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(amount);
-  };
   
   const totals = calculateTotals();
   

@@ -26,6 +26,7 @@ import {
   Delete as DeleteIcon,
   Visibility as VisibilityIcon
 } from '@mui/icons-material';
+import { formatCurrency } from '../../utils/currency';
 import assetService from '../../services/assetService';
 
 const AssetList = () => {
@@ -148,9 +149,7 @@ const AssetList = () => {
                         {new Date(asset.acquisition_date).toLocaleDateString()}
                       </TableCell>
                       <TableCell>
-                        {typeof asset.current_value === 'number'
-                          ? `$${asset.current_value.toFixed(2)}`
-                          : `$${parseFloat(asset.current_value).toFixed(2)}`}
+                        {formatCurrency(asset.current_value)}
                       </TableCell>
                       <TableCell>
                         <Chip
