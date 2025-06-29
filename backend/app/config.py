@@ -35,7 +35,7 @@ class Settings(BaseSettings):
     
     # CORS settings
     #BACKEND_CORS_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:8000"]
-    BACKEND_CORS_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:8000", "https://api.smartkoop.com", "https://smartkoop.com"]
+    BACKEND_CORS_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:8000", "http://my-smartkoop-web.s3-website-us-east-1.amazonaws.com"]
     
     # File storage
     UPLOAD_DIRECTORY: str = os.getenv("UPLOAD_DIRECTORY", "./uploads")
