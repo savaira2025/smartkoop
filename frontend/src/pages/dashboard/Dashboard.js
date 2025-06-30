@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Box, 
   Grid, 
@@ -13,7 +13,12 @@ import {
   ListItemText,
   ListItemIcon,
   Button,
-  useTheme
+  useTheme,
+  CircularProgress,
+  Alert,
+  Skeleton,
+  IconButton,
+  Tooltip
 } from '@mui/material';
 import {
   People as PeopleIcon,
@@ -24,11 +29,13 @@ import {
   Inventory as InventoryIcon,
   Warning as WarningIcon,
   CheckCircle as CheckCircleIcon,
-  ArrowForward as ArrowForwardIcon
+  ArrowForward as ArrowForwardIcon,
+  Refresh as RefreshIcon
 } from '@mui/icons-material';
 import { Link as RouterLink } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { formatCurrency } from '../../utils/currency';
+import dashboardService from '../../services/dashboardService';
 import { 
   Chart as ChartJS, 
   CategoryScale, 
@@ -37,7 +44,7 @@ import {
   LineElement, 
   BarElement,
   Title, 
-  Tooltip, 
+  Tooltip as ChartTooltip, 
   Legend, 
   ArcElement 
 } from 'chart.js';
@@ -51,7 +58,7 @@ ChartJS.register(
   LineElement,
   BarElement,
   Title,
-  Tooltip,
+  ChartTooltip,
   Legend,
   ArcElement
 );
@@ -60,199 +67,254 @@ const Dashboard = () => {
   const { currentUser } = useAuth();
   const theme = useTheme();
   
-  // Mock data for charts and statistics
-  const memberStats = {
-    total: 245,
-    active: 220,
-    inactive: 25,
-    newThisMonth: 12
+  // State for dashboard data
+  const [dashboardData, setDashboardData] = useState(null);
+  const [chartData, setChartData] = useState({
+    savingsTrend: null,
+    salesPurchases: null,
+    memberDistribution: null
+  });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
+
+  // Load dashboard data
+  const loadDashboardData = async (isRefresh = false) => {
+    try {
+      if (isRefresh) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
+      setError(null);
+
+      // Load main dashboard data
+      const data = await dashboardService.getDashboardData();
+      setDashboardData(data);
+
+      // Load chart data in parallel
+      const [savingsTrend, salesPurchases, memberDistribution] = await Promise.all([
+        dashboardService.getSavingsTrendData(),
+        dashboardService.getSalesPurchasesData(),
+        dashboardService.getMemberDistributionData()
+      ]);
+
+      setChartData({
+        savingsTrend,
+        salesPurchases,
+        memberDistribution
+      });
+
+    } catch (err) {
+      console.error('Error loading dashboard data:', err);
+      setError('Failed to load dashboard data. Please try again.');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
   };
-  
-  const financialStats = {
-    totalSavings: 1250000,
-    principalSavings: 500000,
-    mandatorySavings: 600000,
-    voluntarySavings: 150000,
-    unpaidMandatory: 25000,
-    shuDistributed: 75000
+
+  // Load data on component mount
+  useEffect(() => {
+    loadDashboardData();
+  }, []);
+
+  // Handle refresh
+  const handleRefresh = () => {
+    loadDashboardData(true);
   };
-  
-  const salesStats = {
-    totalOrders: 156,
-    pendingOrders: 23,
-    completedOrders: 133,
-    totalSales: 450000,
-    outstandingInvoices: 75000
+
+  // Get icon component by name
+  const getIconComponent = (iconName) => {
+    const icons = {
+      PeopleIcon,
+      ShoppingCartIcon,
+      LocalShippingIcon,
+      AccountBalanceIcon,
+      WarningIcon,
+      CheckCircleIcon
+    };
+    return icons[iconName] || PeopleIcon;
   };
-  
-  const purchaseStats = {
-    totalOrders: 98,
-    pendingOrders: 15,
-    completedOrders: 83,
-    totalPurchases: 320000,
-    outstandingInvoices: 45000
+
+  // Get alert color by type
+  const getAlertColor = (type) => {
+    switch (type) {
+      case 'error': return 'error';
+      case 'warning': return 'warning';
+      case 'success': return 'success';
+      default: return 'info';
+    }
   };
-  
-  // Line chart data for savings trend
-  const savingsTrendData = {
-    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-    datasets: [
-      {
-        label: 'Principal',
-        data: [50000, 55000, 60000, 65000, 70000, 75000],
-        borderColor: theme.palette.primary.main,
-        backgroundColor: theme.palette.primary.main,
-      },
-      {
-        label: 'Mandatory',
-        data: [60000, 65000, 70000, 75000, 80000, 85000],
-        borderColor: theme.palette.secondary.main,
-        backgroundColor: theme.palette.secondary.main,
-      },
-      {
-        label: 'Voluntary',
-        data: [15000, 17000, 19000, 21000, 23000, 25000],
-        borderColor: theme.palette.info.main,
-        backgroundColor: theme.palette.info.main,
-      },
-    ],
-  };
-  
-  // Bar chart data for sales vs purchases
-  const salesPurchasesData = {
-    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-    datasets: [
-      {
-        label: 'Sales',
-        data: [65000, 70000, 75000, 80000, 85000, 90000],
-        backgroundColor: theme.palette.success.main,
-      },
-      {
-        label: 'Purchases',
-        data: [50000, 55000, 60000, 65000, 70000, 75000],
-        backgroundColor: theme.palette.error.main,
-      },
-    ],
-  };
-  
-  // Pie chart data for member distribution
-  const memberDistributionData = {
-    labels: ['Active', 'Inactive'],
-    datasets: [
-      {
-        data: [memberStats.active, memberStats.inactive],
-        backgroundColor: [
-          theme.palette.success.main,
-          theme.palette.error.main,
-        ],
-        borderWidth: 1,
-      },
-    ],
-  };
+
+  // Loading skeleton component
+  const StatCardSkeleton = () => (
+    <Paper elevation={2} sx={{ p: 2, height: 140 }}>
+      <Skeleton variant="text" width="60%" height={24} />
+      <Skeleton variant="text" width="80%" height={48} sx={{ mt: 1 }} />
+      <Skeleton variant="text" width="50%" height={20} sx={{ mt: 1 }} />
+    </Paper>
+  );
+
+  // Error state
+  if (error && !dashboardData) {
+    return (
+      <Box>
+        <Typography variant="h4" component="h1" gutterBottom>
+          Dashboard
+        </Typography>
+        <Alert 
+          severity="error" 
+          action={
+            <Button color="inherit" size="small" onClick={() => loadDashboardData()}>
+              Retry
+            </Button>
+          }
+        >
+          {error}
+        </Alert>
+      </Box>
+    );
+  }
   
   
   return (
     <Box>
-      <Typography variant="h4" component="h1" gutterBottom>
-        Dashboard
-      </Typography>
-      <Typography variant="subtitle1" gutterBottom>
-        Welcome back, {currentUser?.full_name || 'User'}!
-      </Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+        <Box>
+          <Typography variant="h4" component="h1" gutterBottom>
+            Dashboard
+          </Typography>
+          <Typography variant="subtitle1" gutterBottom>
+            Welcome back, {currentUser?.full_name || 'User'}!
+          </Typography>
+        </Box>
+        <Tooltip title="Refresh Dashboard">
+          <IconButton 
+            onClick={handleRefresh} 
+            disabled={refreshing}
+            color="primary"
+          >
+            {refreshing ? <CircularProgress size={24} /> : <RefreshIcon />}
+          </IconButton>
+        </Tooltip>
+      </Box>
+
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+      )}
       
       {/* Quick Stats */}
       <Grid container spacing={3} sx={{ mt: 1 }}>
         <Grid item xs={12} sm={6} md={3}>
-          <Paper
-            elevation={2}
-            sx={{
-              p: 2,
-              display: 'flex',
-              flexDirection: 'column',
-              height: 140,
-              bgcolor: theme.palette.primary.light,
-              color: theme.palette.primary.contrastText,
-            }}
-          >
-            <Typography variant="h6" gutterBottom>
-              Members
-            </Typography>
-            <Typography variant="h3" component="div" sx={{ flexGrow: 1 }}>
-              {memberStats.total}
-            </Typography>
-            <Typography variant="body2">
-              {memberStats.newThisMonth} new this month
-            </Typography>
-          </Paper>
+          {loading ? (
+            <StatCardSkeleton />
+          ) : (
+            <Paper
+              elevation={2}
+              sx={{
+                p: 2,
+                display: 'flex',
+                flexDirection: 'column',
+                height: 140,
+                bgcolor: theme.palette.primary.light,
+                color: theme.palette.primary.contrastText,
+              }}
+            >
+              <Typography variant="h6" gutterBottom>
+                Members
+              </Typography>
+              <Typography variant="h3" component="div" sx={{ flexGrow: 1 }}>
+                {dashboardData?.memberStats?.total || 0}
+              </Typography>
+              <Typography variant="body2">
+                {dashboardData?.memberStats?.newThisMonth || 0} new this month
+              </Typography>
+            </Paper>
+          )}
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
-          <Paper
-            elevation={2}
-            sx={{
-              p: 2,
-              display: 'flex',
-              flexDirection: 'column',
-              height: 140,
-              bgcolor: theme.palette.secondary.light,
-              color: theme.palette.secondary.contrastText,
-            }}
-          >
-            <Typography variant="h6" gutterBottom>
-              Total Savings
-            </Typography>
-            <Typography variant="h3" component="div" sx={{ flexGrow: 1 }}>
-              {formatCurrency(financialStats.totalSavings)}
-            </Typography>
-            <Typography variant="body2">
-              Across all savings types
-            </Typography>
-          </Paper>
+          {loading ? (
+            <StatCardSkeleton />
+          ) : (
+            <Paper
+              elevation={2}
+              sx={{
+                p: 2,
+                display: 'flex',
+                flexDirection: 'column',
+                height: 140,
+                bgcolor: theme.palette.secondary.light,
+                color: theme.palette.secondary.contrastText,
+              }}
+            >
+              <Typography variant="h6" gutterBottom>
+                Total Savings
+              </Typography>
+              <Typography variant="h3" component="div" sx={{ flexGrow: 1 }}>
+                {formatCurrency(dashboardData?.financialStats?.totalSavings || 0)}
+              </Typography>
+              <Typography variant="body2">
+                Across all savings types
+              </Typography>
+            </Paper>
+          )}
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
-          <Paper
-            elevation={2}
-            sx={{
-              p: 2,
-              display: 'flex',
-              flexDirection: 'column',
-              height: 140,
-              bgcolor: theme.palette.success.light,
-              color: theme.palette.success.contrastText,
-            }}
-          >
-            <Typography variant="h6" gutterBottom>
-              Sales
-            </Typography>
-            <Typography variant="h3" component="div" sx={{ flexGrow: 1 }}>
-              {formatCurrency(salesStats.totalSales)}
-            </Typography>
-            <Typography variant="body2">
-              {salesStats.totalOrders} orders
-            </Typography>
-          </Paper>
+          {loading ? (
+            <StatCardSkeleton />
+          ) : (
+            <Paper
+              elevation={2}
+              sx={{
+                p: 2,
+                display: 'flex',
+                flexDirection: 'column',
+                height: 140,
+                bgcolor: theme.palette.success.light,
+                color: theme.palette.success.contrastText,
+              }}
+            >
+              <Typography variant="h6" gutterBottom>
+                Sales
+              </Typography>
+              <Typography variant="h3" component="div" sx={{ flexGrow: 1 }}>
+                {formatCurrency(dashboardData?.salesStats?.totalSales || 0)}
+              </Typography>
+              <Typography variant="body2">
+                {dashboardData?.salesStats?.totalOrders || 0} orders
+              </Typography>
+            </Paper>
+          )}
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
-          <Paper
-            elevation={2}
-            sx={{
-              p: 2,
-              display: 'flex',
-              flexDirection: 'column',
-              height: 140,
-              bgcolor: theme.palette.error.light,
-              color: theme.palette.error.contrastText,
-            }}
-          >
-            <Typography variant="h6" gutterBottom>
-              Purchases
-            </Typography>
-            <Typography variant="h3" component="div" sx={{ flexGrow: 1 }}>
-              {formatCurrency(purchaseStats.totalPurchases)}
-            </Typography>
-            <Typography variant="body2">
-              {purchaseStats.totalOrders} orders
-            </Typography>
-          </Paper>
+          {loading ? (
+            <StatCardSkeleton />
+          ) : (
+            <Paper
+              elevation={2}
+              sx={{
+                p: 2,
+                display: 'flex',
+                flexDirection: 'column',
+                height: 140,
+                bgcolor: theme.palette.error.light,
+                color: theme.palette.error.contrastText,
+              }}
+            >
+              <Typography variant="h6" gutterBottom>
+                Purchases
+              </Typography>
+              <Typography variant="h3" component="div" sx={{ flexGrow: 1 }}>
+                {formatCurrency(dashboardData?.purchaseStats?.totalPurchases || 0)}
+              </Typography>
+              <Typography variant="body2">
+                {dashboardData?.purchaseStats?.totalOrders || 0} orders
+              </Typography>
+            </Paper>
+          )}
         </Grid>
       </Grid>
       
@@ -264,20 +326,30 @@ const Dashboard = () => {
             <CardHeader title="Savings Trend" />
             <Divider />
             <CardContent>
-              <Box sx={{ height: 300 }}>
-                <Line
-                  data={savingsTrendData}
-                  options={{
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                      legend: {
-                        position: 'top',
+              {loading ? (
+                <Box sx={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <CircularProgress />
+                </Box>
+              ) : chartData.savingsTrend ? (
+                <Box sx={{ height: 300 }}>
+                  <Line
+                    data={chartData.savingsTrend}
+                    options={{
+                      responsive: true,
+                      maintainAspectRatio: false,
+                      plugins: {
+                        legend: {
+                          position: 'top',
+                        },
                       },
-                    },
-                  }}
-                />
-              </Box>
+                    }}
+                  />
+                </Box>
+              ) : (
+                <Box sx={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Typography color="textSecondary">No data available</Typography>
+                </Box>
+              )}
             </CardContent>
           </Card>
         </Grid>
@@ -288,20 +360,30 @@ const Dashboard = () => {
             <CardHeader title="Member Status" />
             <Divider />
             <CardContent>
-              <Box sx={{ height: 300, display: 'flex', justifyContent: 'center' }}>
-                <Pie
-                  data={memberDistributionData}
-                  options={{
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                      legend: {
-                        position: 'bottom',
+              {loading ? (
+                <Box sx={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <CircularProgress />
+                </Box>
+              ) : chartData.memberDistribution ? (
+                <Box sx={{ height: 300, display: 'flex', justifyContent: 'center' }}>
+                  <Pie
+                    data={chartData.memberDistribution}
+                    options={{
+                      responsive: true,
+                      maintainAspectRatio: false,
+                      plugins: {
+                        legend: {
+                          position: 'bottom',
+                        },
                       },
-                    },
-                  }}
-                />
-              </Box>
+                    }}
+                  />
+                </Box>
+              ) : (
+                <Box sx={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Typography color="textSecondary">No data available</Typography>
+                </Box>
+              )}
             </CardContent>
           </Card>
         </Grid>
@@ -312,20 +394,30 @@ const Dashboard = () => {
             <CardHeader title="Sales vs Purchases" />
             <Divider />
             <CardContent>
-              <Box sx={{ height: 300 }}>
-                <Bar
-                  data={salesPurchasesData}
-                  options={{
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                      legend: {
-                        position: 'top',
+              {loading ? (
+                <Box sx={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <CircularProgress />
+                </Box>
+              ) : chartData.salesPurchases ? (
+                <Box sx={{ height: 300 }}>
+                  <Bar
+                    data={chartData.salesPurchases}
+                    options={{
+                      responsive: true,
+                      maintainAspectRatio: false,
+                      plugins: {
+                        legend: {
+                          position: 'top',
+                        },
                       },
-                    },
-                  }}
-                />
-              </Box>
+                    }}
+                  />
+                </Box>
+              ) : (
+                <Box sx={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Typography color="textSecondary">No data available</Typography>
+                </Box>
+              )}
             </CardContent>
           </Card>
         </Grid>
@@ -336,44 +428,40 @@ const Dashboard = () => {
             <CardHeader title="Recent Activities" />
             <Divider />
             <CardContent>
-              <List>
-                <ListItem>
-                  <ListItemIcon>
-                    <PeopleIcon />
-                  </ListItemIcon>
-                  <ListItemText
-                    primary="New member registered"
-                    secondary="John Doe - 2 hours ago"
-                  />
-                </ListItem>
-                <ListItem>
-                  <ListItemIcon>
-                    <ShoppingCartIcon />
-                  </ListItemIcon>
-                  <ListItemText
-                    primary="New sales order created"
-                    secondary="Order #SO-2023-042 - 3 hours ago"
-                  />
-                </ListItem>
-                <ListItem>
-                  <ListItemIcon>
-                    <AccountBalanceIcon />
-                  </ListItemIcon>
-                  <ListItemText
-                    primary="Journal entry posted"
-                    secondary="Entry #JE-2023-128 - 5 hours ago"
-                  />
-                </ListItem>
-                <ListItem>
-                  <ListItemIcon>
-                    <LocalShippingIcon />
-                  </ListItemIcon>
-                  <ListItemText
-                    primary="Purchase order approved"
-                    secondary="Order #PO-2023-037 - 1 day ago"
-                  />
-                </ListItem>
-              </List>
+              {loading ? (
+                <Box sx={{ p: 2 }}>
+                  {[1, 2, 3, 4].map((item) => (
+                    <Box key={item} sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                      <Skeleton variant="circular" width={40} height={40} sx={{ mr: 2 }} />
+                      <Box sx={{ flex: 1 }}>
+                        <Skeleton variant="text" width="80%" />
+                        <Skeleton variant="text" width="60%" />
+                      </Box>
+                    </Box>
+                  ))}
+                </Box>
+              ) : dashboardData?.recentActivities?.length > 0 ? (
+                <List>
+                  {dashboardData.recentActivities.map((activity, index) => {
+                    const IconComponent = getIconComponent(activity.icon);
+                    return (
+                      <ListItem key={index}>
+                        <ListItemIcon>
+                          <IconComponent />
+                        </ListItemIcon>
+                        <ListItemText
+                          primary={activity.title}
+                          secondary={activity.description}
+                        />
+                      </ListItem>
+                    );
+                  })}
+                </List>
+              ) : (
+                <Box sx={{ p: 2, textAlign: 'center' }}>
+                  <Typography color="textSecondary">No recent activities</Typography>
+                </Box>
+              )}
               <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
                 <Button
                   component={RouterLink}
@@ -393,44 +481,41 @@ const Dashboard = () => {
             <CardHeader title="Alerts & Notifications" />
             <Divider />
             <CardContent>
-              <List>
-                <ListItem>
-                  <ListItemIcon>
-                    <WarningIcon color="error" />
-                  </ListItemIcon>
-                  <ListItemText
-                    primary="Unpaid mandatory savings"
-                    secondary={`${formatCurrency(financialStats.unpaidMandatory)} total unpaid amount`}
-                  />
-                </ListItem>
-                <ListItem>
-                  <ListItemIcon>
-                    <WarningIcon color="warning" />
-                  </ListItemIcon>
-                  <ListItemText
-                    primary="Outstanding sales invoices"
-                    secondary={`${formatCurrency(salesStats.outstandingInvoices)} pending payment`}
-                  />
-                </ListItem>
-                <ListItem>
-                  <ListItemIcon>
-                    <WarningIcon color="warning" />
-                  </ListItemIcon>
-                  <ListItemText
-                    primary="Outstanding purchase invoices"
-                    secondary={`${formatCurrency(purchaseStats.outstandingInvoices)} pending payment`}
-                  />
-                </ListItem>
-                <ListItem>
-                  <ListItemIcon>
-                    <CheckCircleIcon color="success" />
-                  </ListItemIcon>
-                  <ListItemText
-                    primary="SHU distribution completed"
-                    secondary={`${formatCurrency(financialStats.shuDistributed)} distributed to members`}
-                  />
-                </ListItem>
-              </List>
+              {loading ? (
+                <Box sx={{ p: 2 }}>
+                  {[1, 2, 3, 4].map((item) => (
+                    <Box key={item} sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                      <Skeleton variant="circular" width={40} height={40} sx={{ mr: 2 }} />
+                      <Box sx={{ flex: 1 }}>
+                        <Skeleton variant="text" width="80%" />
+                        <Skeleton variant="text" width="60%" />
+                      </Box>
+                    </Box>
+                  ))}
+                </Box>
+              ) : dashboardData?.systemAlerts?.length > 0 ? (
+                <List>
+                  {dashboardData.systemAlerts.map((alert, index) => {
+                    const IconComponent = getIconComponent(alert.icon);
+                    const alertColor = getAlertColor(alert.type);
+                    return (
+                      <ListItem key={index}>
+                        <ListItemIcon>
+                          <IconComponent color={alertColor} />
+                        </ListItemIcon>
+                        <ListItemText
+                          primary={alert.title}
+                          secondary={alert.description}
+                        />
+                      </ListItem>
+                    );
+                  })}
+                </List>
+              ) : (
+                <Box sx={{ p: 2, textAlign: 'center' }}>
+                  <Typography color="textSecondary">No alerts</Typography>
+                </Box>
+              )}
               <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
                 <Button
                   component={RouterLink}
